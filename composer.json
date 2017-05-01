@@ -1,0 +1,13 @@
+{
+    "name": "connect5",
+    "license": "proprietary",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "Connect5\\": "src/"
+        }
+    },
+    "require": {
+        "cboden/ratchet": "0.3.*"
+    }
+}
