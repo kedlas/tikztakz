@@ -1,0 +1,11 @@
+{
+  "type": "add_move",
+  "data": {
+    "player_id": "connection_id",
+    "game_id": "game_id",
+    "coords": {
+      "x": 4,
+      "y": 7
+    }
+  }
+}

@@ -21,6 +21,9 @@ class Chat implements MessageComponentInterface
 	 */
 	protected $clients;
 
+	/**
+	 * Chat constructor.
+	 */
 	public function __construct()
 	{
 		$this->clients = new SplObjectStorage();

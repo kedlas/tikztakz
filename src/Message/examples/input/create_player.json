@@ -1,0 +1,6 @@
+{
+  "type": "create_player",
+  "data": {
+    "player_name": "Player Name"
+  }
+}
