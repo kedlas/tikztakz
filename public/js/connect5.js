@@ -180,6 +180,8 @@ function endOfGameResp(data) {
   }
 
   $("div#turnToggle").html(label);
+  $("div#gameBoard").fadeTo(200, 0.33);
+  conn.close();
 }
 
 /**

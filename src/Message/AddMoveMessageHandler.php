@@ -84,6 +84,9 @@ class AddMoveMessageHandler implements MessageHandlerInterface
 		if ($game->isEndOfGame()) {
 			$this->lobby->notifyAllPlayers($game, $this->createEndOfGameResp($player));
 		}
+
+		$game->close();
+		unset($game);
 	}
 
 	/**

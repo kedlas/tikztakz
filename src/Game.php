@@ -173,6 +173,11 @@ class Game
 		}
 	}
 
+	/**
+	 * @param Player $player
+	 * @param int    $x
+	 * @param int    $y
+	 */
 	public function addMove(Player $player, int $x, int $y)
 	{
 		$key = $x . ':' . $y;
@@ -201,7 +206,7 @@ class Game
 	}
 
 	/**
-	 *
+	 * @return Player
 	 */
 	private function switchPlayerOnTurn()
 	{
@@ -211,6 +216,8 @@ class Game
 				break;
 			}
 		}
+
+		return $this->playerOnTurn;
 	}
 
 	/**
@@ -260,6 +267,13 @@ class Game
 		return FALSE;
 	}
 
+	/**
+	 * @param Player $player
+	 * @param int    $x
+	 * @param int    $y
+	 *
+	 * @return bool
+	 */
 	private function hasVerticalStreak(Player $player, int $x, int $y): bool
 	{
 		$streak = 1;
@@ -282,6 +296,13 @@ class Game
 		return FALSE;
 	}
 
+	/**
+	 * @param Player $player
+	 * @param int    $x
+	 * @param int    $y
+	 *
+	 * @return bool
+	 */
 	private function hasDiagonalStreak(Player $player, int $x, int $y): bool
 	{
 		$streak = 1;

@@ -66,8 +66,6 @@ class Server implements MessageComponentInterface
 	{
 		echo "An error has occurred: {$e->getMessage()}\n";
 
-		// TODO - cancel the game
-
 		$conn->close();
 	}
 
