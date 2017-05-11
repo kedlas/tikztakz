@@ -231,7 +231,9 @@ class Game
 	{
 		if ($this->hasHorizontalStreak($player, $x, $y) ||
 			$this->hasVerticalStreak($player, $x, $y) ||
-			$this->hasDiagonalStreak($player, $x, $y)) {
+			$this->hasFirstDiagonalStreak($player, $x, $y) ||
+			$this->hasSecondDiagonalStreak($player, $x, $y))
+		{
 			return TRUE;
 		}
 
@@ -303,7 +305,7 @@ class Game
 	 *
 	 * @return bool
 	 */
-	private function hasDiagonalStreak(Player $player, int $x, int $y): bool
+	private function hasFirstDiagonalStreak(Player $player, int $x, int $y): bool
 	{
 		$streak = 1;
 		$length = 1;
@@ -319,6 +321,41 @@ class Game
 		while (
 			isset($this->board[$x + $length][$y + $length]) &&
 			$this->board[$x + $length][$y + $length] === $player->getSymbol()
+		) {
+			$length++;
+			$streak++;
+		}
+
+		if ($streak >= self::WINNING_STREAK) {
+			return TRUE;
+		}
+
+		return FALSE;
+	}
+
+	/**
+	 * @param Player $player
+	 * @param int    $x
+	 * @param int    $y
+	 *
+	 * @return bool
+	 */
+	private function hasSecondDiagonalStreak(Player $player, int $x, int $y): bool
+	{
+		$streak = 1;
+		$length = 1;
+		while (
+			isset($this->board[$x - $length][$y + $length]) &&
+			$this->board[$x - $length][$y + $length] === $player->getSymbol()
+		) {
+			$length++;
+			$streak++;
+		}
+
+		$length = 1;
+		while (
+			isset($this->board[$x + $length][$y - $length]) &&
+			$this->board[$x + $length][$y - $length] === $player->getSymbol()
 		) {
 			$length++;
 			$streak++;
