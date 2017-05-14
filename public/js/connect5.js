@@ -1,3 +1,4 @@
+var serverAddr = 'ws://10.211.55.6:8080';
 var conn = null;
 var separator = '-';
 var player = {
@@ -8,10 +9,10 @@ var player = {
   is_my_turn: false
 };
 
-$(document).ready(function(){
+$(document).ready(function () {
   initWebSockets();
 
-  $("#joinGame").click(function() {
+  $("#joinGame").click(function () {
     if (!conn) {
       return null;
     }
@@ -31,22 +32,29 @@ $(document).ready(function(){
   });
 });
 
-$(window).on('beforeunload', function() {
+/**
+ * Show confirm dialog before leaving the site
+ */
+$(window).on('beforeunload', function () {
   return 'By leaving this site you will leave the game, are you sure?';
 });
 
+/**
+ * Create websocket connection to server
+ */
 function initWebSockets() {
-  conn = new WebSocket('ws://localhost:8080');
-  conn.onopen = function() {
+  conn = new WebSocket(serverAddr);
+  conn.onopen = function () {
     console.log("Connection established!");
   };
-  conn.onerror = function(e) {
+  conn.onerror = function (e) {
     log("Connection to server failed!" + e);
     conn = null;
+    alert('Connection to server failed. Please try again.');
     location.reload();
   };
 
-  conn.onmessage = function(e) {
+  conn.onmessage = function (e) {
     var msg = null;
     try {
       msg = JSON.parse(e.data);
@@ -72,33 +80,19 @@ function initWebSockets() {
   };
 }
 
-
+/**
+ * Send join game request to server
+ *
+ * @param playerName
+ */
 function joinGame(playerName) {
-  var msg = { type: "create_player", data: { player_name: playerName } };
+  var msg = {type: "create_player", data: {player_name: playerName}};
   conn.send(JSON.stringify(msg));
 }
 
-function createPlayerResp(data) {
-  player = data;
-
-  $("div#gameEntry").html('<p>...waiting for opponent...</p>');
-  $("div#turnToggle .my_turn").prepend('<strong>' + player.player_name + '</strong>, ');
-}
-
-function startGameResp(data) {
-  if (player.player_id === data.player_on_turn) {
-    player.is_my_turn = true;
-  }
-
-  var boardSize = data.board_size;
-
-  $("div#gameEntry").html(
-    '<p><strong>' + player.player_name +'</strong>, your symbol is: <strong>' + player.symbol + '</strong></p>'
-  );
-  toggleTurnLabel();
-  drawGameBoard(boardSize);
-}
-
+/**
+ * Toggle labels signalizing if player is on turn or not
+ */
 function toggleTurnLabel() {
   if (player.is_my_turn === true) {
     $("div#turnToggle .my_turn").show();
@@ -109,13 +103,18 @@ function toggleTurnLabel() {
   }
 }
 
+/**
+ * Draws game board
+ *
+ * @param boardSize
+ */
 function drawGameBoard(boardSize) {
   var board = '<table>';
 
   for (var x = 0; x < boardSize; x++) {
     board += '<tr>';
     for (var y = 0; y < boardSize; y++) {
-      board += '<td class="field" id="field-' + x + separator + y +'"></td>';
+      board += '<td class="field" id="field-' + x + separator + y + '"></td>';
     }
     board += '</tr>';
   }
@@ -128,6 +127,7 @@ function drawGameBoard(boardSize) {
 }
 
 /**
+ * Send add move command to server
  *
  * @param fieldId
  * @return {null}
@@ -138,7 +138,6 @@ function addMove(fieldId) {
   }
 
   var coords = fieldId.split(separator);
-
   var msg = {
     type: 'add_move',
     data: {
@@ -153,6 +152,36 @@ function addMove(fieldId) {
 }
 
 /**
+ * Handle server's "start game" message
+ * @param data
+ */
+function startGameResp(data) {
+  if (player.player_id === data.player_on_turn) {
+    player.is_my_turn = true;
+  }
+
+  var boardSize = data.board_size;
+
+  $("div#gameEntry").html(
+    '<p><strong>' + player.player_name + '</strong>, your symbol is: <strong>' + player.symbol + '</strong></p>'
+  );
+  toggleTurnLabel();
+  drawGameBoard(boardSize);
+}
+
+/**
+ * Handle server's "create player" message
+ * @param data
+ */
+function createPlayerResp(data) {
+  player = data;
+
+  $("div#gameEntry").html('<p>...waiting for opponent...</p>');
+  $("div#turnToggle .my_turn").prepend('<strong>' + player.player_name + '</strong>, ');
+}
+
+/**
+ * Handle server's "add move" message
  *
  * @param data
  */
@@ -172,6 +201,11 @@ function addMoveResp(data) {
   toggleTurnLabel();
 }
 
+/**
+ * Handle server's "end of game" message
+ *
+ * @param data
+ */
 function endOfGameResp(data) {
   player.is_my_turn = false;
   var label = '<div class="alert alert-danger h2">You loose, try again.</div>';
