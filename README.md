@@ -19,3 +19,5 @@ Game begins whenever 2 players join the game by filling their names.
 The server will connect these 2 players and creates a new game board for them.
 Players place their own marks to the game board and try to create line of 5 symbols in ine column, row or diagonals.
 Game end when the player manages to make 5 marks in line. 
+
+![alt text](https://github.com/kedlas/connect5sockets/blob/master/connect5-screenshot.png)
