@@ -1,0 +1,26 @@
+{
+  "name": "connect5socket-client",
+  "version": "1.0.0",
+  "description": "Connect5gane client created by html css and javascript",
+  "main": "index.html",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Tomas Sedlacek",
+  "license": "ISC",
+  "devDependencies": {
+    "autoprefixer": "^7.1.1",
+    "css-mqpacker": "^6.0.0",
+    "cssnano": "^3.10.0",
+    "gulp": "^3.9.1",
+    "gulp-clean-css": "^3.3.1",
+    "gulp-concat": "^2.6.1",
+    "gulp-deporder": "^1.1.0",
+    "gulp-htmlclean": "^2.7.14",
+    "gulp-postcss": "^7.0.0",
+    "gulp-sass": "^3.1.0",
+    "gulp-strip-debug": "^1.1.0",
+    "gulp-uglify": "^2.1.2",
+    "postcss-assets": "^4.1.0"
+  }
+}

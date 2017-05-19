@@ -14,7 +14,7 @@ How to run this app:
 5. set server's ip address to your docker machine ip address on the 1st line of js/conect5.js (e.g. use docker-machine ip command)
 6. open the index.html file in two browser windows and enjoy the game
 ```
-
+git
 Game begins whenever 2 players join the game by filling their names.
 The server will connect these 2 players and creates a new game board for them.
 Players place their own marks to the game board and try to create line of 5 symbols in ine column, row or diagonals.
