@@ -9,6 +9,7 @@
 
 namespace Connect5;
 
+use Connect5\Message\DisconnectPlayerMessageHandler;
 use Exception;
 use InvalidArgumentException;
 use Ratchet\ConnectionInterface;
@@ -53,6 +54,7 @@ class Server implements MessageComponentInterface
 	 */
 	public function onClose(ConnectionInterface $conn)
 	{
+		$this->router->handleMessage($conn, DisconnectPlayerMessageHandler::DISCONNECT_PLAYER_KEY, []);
 		$this->clients->detach($conn);
 
 		echo "Connection {$conn->resourceId} has disconnected\n";

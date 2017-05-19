@@ -12,6 +12,7 @@ namespace Connect5;
 use Connect5\Exception\LogicException;
 use Connect5\Message\AddMoveMessageHandler;
 use Connect5\Message\CreatePlayerMessageHandler;
+use Connect5\Message\DisconnectPlayerMessageHandler;
 use Ratchet\ConnectionInterface;
 
 class MessageRouter
@@ -28,6 +29,11 @@ class MessageRouter
 	private $addMoveHandler;
 
 	/**
+	 * @var DisconnectPlayerMessageHandler
+	 */
+	private $disconnectHandler;
+
+	/**
 	 * MessageRouter constructor.
 	 */
 	public function __construct()
@@ -36,6 +42,7 @@ class MessageRouter
 
 		$this->createPlayerHandler = new CreatePlayerMessageHandler($this->lobby);
 		$this->addMoveHandler      = new AddMoveMessageHandler($this->lobby);
+		$this->disconnectHandler   = new DisconnectPlayerMessageHandler($this->lobby);
 	}
 
 	/**
@@ -52,6 +59,9 @@ class MessageRouter
 				break;
 			case AddMoveMessageHandler::ADD_MOVE_KEY:
 				$handler = $this->addMoveHandler;
+				break;
+			case DisconnectPlayerMessageHandler::DISCONNECT_PLAYER_KEY:
+				$handler = $this->disconnectHandler;
 				break;
 			default:
 				throw new LogicException(sprintf('Invalid message type: "%s"', $type));

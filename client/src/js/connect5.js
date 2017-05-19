@@ -50,7 +50,7 @@ function initWebSockets() {
   conn.onerror = function (e) {
     log("Connection to server failed!" + e);
     conn = null;
-    alert('Connection to server failed. Please try again.');
+    alert('Connection to server failed. Please try new game.');
     location.reload();
   };
 
@@ -74,6 +74,8 @@ function initWebSockets() {
       startGameResp(msg.data);
     } else if (msg.type === 'add_move_resp') {
       addMoveResp(msg.data);
+    } else if (msg.type === 'disconnect_player_resp') {
+      disconnectPlayerResp();
     } else if (msg.type === 'end_of_game_resp') {
       endOfGameResp(msg.data);
     }
@@ -217,6 +219,19 @@ function endOfGameResp(data) {
   $("div#gameBoard").fadeTo(200, 0.33);
   conn.close();
 }
+
+/**
+ *
+ */
+function disconnectPlayerResp() {
+  player.is_my_turn = false;
+  var label = '<div class="alert alert-warning h2">It seems your opponent has left the game :(</div>';
+
+  $("div#turnToggle").html(label);
+  $("div#gameBoard").fadeTo(200, 0.33);
+  conn.close();
+}
+
 
 /**
  * Add message to message log

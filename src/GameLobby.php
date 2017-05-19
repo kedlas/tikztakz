@@ -51,8 +51,8 @@ class GameLobby
 	public function findPlayer(ConnectionInterface $connection): ?Player
 	{
 		if (isset($this->players[$connection->resourceId]) &&
-			$this->players[$connection->resourceId] instanceof Player)
-		{
+			$this->players[$connection->resourceId] instanceof Player
+		) {
 			return $this->players[$connection->resourceId];
 		}
 
@@ -64,7 +64,27 @@ class GameLobby
 	 */
 	public function deletePlayer(ConnectionInterface $conn)
 	{
-		unset($this->players[$conn->resourceId]);
+		if (array_key_exists($conn->resourceId, $this->players)) {
+			$player = $this->players[$conn->resourceId];
+			echo sprintf('Player "%s" has been deleted from game "%s"', $player->getId(), $player->getGame()->getId());
+
+			unset($this->players[$conn->resourceId]);
+		}
+	}
+
+	/**
+	 * @param Game $game
+	 */
+	public function deleteGame(Game $game)
+	{
+		foreach ($game->getPlayers() as $player) {
+			$this->deletePlayer($player->getConnection());
+		}
+
+		if (array_key_exists($game->getId(), $this->games)) {
+			echo sprintf('Game "%s" has been deleted', $player->getGame()->getId());
+			unset($this->games[$game->getId()]);
+		}
 	}
 
 	/**
@@ -96,6 +116,8 @@ class GameLobby
 			return $this->addPlayerToGame($player);
 		}
 
+		echo sprintf('Player "%s" has joined game "%s"', $player->getId(), $player->getGame()->getId());
+
 		return $game;
 	}
 
@@ -110,8 +132,9 @@ class GameLobby
 			}
 		}
 
-		$game          = new Game();
-		$this->games[] = $game;
+		$game = new Game();
+
+		$this->games[$game->getId()] = $game;
 
 		return $game;
 	}
