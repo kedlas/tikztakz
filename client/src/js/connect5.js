@@ -250,8 +250,10 @@ function createPlayerResp(data) {
   if (player.game_public) {
     $("div#alerts .alert-info").html('Looking for an opponent...');
   } else {
+    var link = window.location.href.split('#')[0] + '?game_id=' + player.game_id;
     $("div#alerts .alert-info").html(
-      'Waiting for opponent to connect. Share this game token with him: <strong>'+ player.game_id + '</strong>'
+      'Copy the link below and send it to your friend.When he connects the game will start automatically.' +
+      '<p><strong>'+ link + '</strong></p>'
     );
   }
 
@@ -383,5 +385,10 @@ function preFillGameEntry() {
   if (name) {
     player.player_name = name;
     $("input#playerName").val(name);
+  }
+
+  var gameId = getUrlParameter('game_id');
+  if (gameId) {
+    $("#privateGameId").val(gameId);
   }
 }
