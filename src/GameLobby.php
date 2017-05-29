@@ -38,7 +38,6 @@ class GameLobby
 		$player = new Player($conn, $name);
 
 		$this->players[$conn->resourceId] = $player;
-		$this->addPlayerToGame($player);
 
 		return $player;
 	}
@@ -88,35 +87,34 @@ class GameLobby
 	}
 
 	/**
-	 * @param string $playerId
-	 * @param string $gameId
+	 * @param string $id
 	 *
-	 * @return bool
+	 * @return Game|null
 	 */
-	public function isValidPlayerGameCombination(string $playerId, string $gameId)
+	public function findGame(string $id): ? Game
 	{
-		return TRUE;
+		if (isset($this->games[$id])) {
+			return $this->games[$id];
+		}
+
+		return NULL;
 	}
 
 	/**
-	 *
-	 * @param Player $player
-	 *
 	 * @return Game
 	 */
-	public function addPlayerToGame(Player $player): Game
+	public function getRandomPublicGame(): Game
 	{
-		$game = $this->getAvailableGame();
-
-		try {
-			$game->addPlayer($player);
-			$player->setGame($game);
-		} catch (LogicException $e) {
-			// Crashed probably because of players concurrency, try again different game
-			return $this->addPlayerToGame($player);
+		// Find public game where some player waits for opponent first
+		foreach ($this->games as $game) {
+			if ($game->isPublic() && $game->isOpen()) {
+				return $game;
+			}
 		}
 
-		echo sprintf('Player "%s" has joined game "%s"', $player->getId(), $player->getGame()->getId());
+		$game = new Game();
+
+		$this->games[$game->getId()] = $game;
 
 		return $game;
 	}
@@ -124,15 +122,10 @@ class GameLobby
 	/**
 	 * @return Game
 	 */
-	private function getAvailableGame()
+	public function createPrivateGame(): Game
 	{
-		foreach ($this->games as $game) {
-			if ($game->isOpen()) {
-				return $game;
-			}
-		}
-
 		$game = new Game();
+		$game->setPublic(FALSE);
 
 		$this->games[$game->getId()] = $game;
 

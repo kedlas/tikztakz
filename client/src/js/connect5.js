@@ -1,24 +1,62 @@
-var serverAddr = 'ws://10.211.55.6:8080';
+//var serverAddr = 'ws://165.227.143.213:8080';
+var serverAddr = 'ws://10.211.55.6:8888';
 var conn = null;
 var separator = '-';
 var player = {
   symbol: '',
+  color: '',
   player_id: '',
   game_id: '',
+  game_public: true,
   player_name: 'Unknown player',
   is_my_turn: false
 };
 
 $(document).ready(function () {
-  initWebSockets();
+  onDeviceReady();
+});
 
-  $("#joinGame").click(function () {
+window.onbeforeunload = function (e) {
+  if (conn) {
+      return 'Are you sure to leave the game?';
+  }
+};
+
+/**
+ * Device ready, bind basic behavior
+ */
+function onDeviceReady() {
+  initWebSockets();
+  preFillGameEntry();
+
+  $("#joinRandomPublicGame").click(function () {
     if (!conn) {
       return null;
     }
 
-    var player_name = $("input#playerName").val();
-    joinGame(player_name);
+    joinGame(getPlayerName(), true);
+  });
+  
+  $("#createPrivateGame").click(function () {
+    if (!conn) {
+      return null;
+    }
+
+    joinGame(getPlayerName(), false);
+  });
+
+  $("#joinPrivateGame").click(function () {
+    if (!conn) {
+      return null;
+    }
+
+    var gameId = $("#privateGameId").val();
+
+    if (!gameId || gameId.length === 0) {
+      return null;
+    }
+
+    joinGame(getPlayerName(), false, gameId);
   });
 
   $("#gameBoard").on('click', 'td.field', function (event) {
@@ -30,27 +68,29 @@ $(document).ready(function () {
     }
     addMove(event.target.id);
   });
-});
 
-/**
- * Show confirm dialog before leaving the site
- */
-$(window).on('beforeunload', function () {
-  return 'By leaving this site you will leave the game, are you sure?';
-});
+  $('.buttons #resetGame').click(function () {
+    if (conn) {
+      conn.close();
+    }
+    conn = null;
+    location.reload();
+  });
+}
 
 /**
  * Create websocket connection to server
  */
 function initWebSockets() {
   conn = new WebSocket(serverAddr);
+
   conn.onopen = function () {
-    console.log("Connection established!");
+    log("Connection established!");
   };
+
   conn.onerror = function (e) {
-    log("Connection to server failed!" + e);
     conn = null;
-    alert('Connection to server failed. Please try new game.');
+    log("Connection to server failed!" + e);
     location.reload();
   };
 
@@ -83,12 +123,37 @@ function initWebSockets() {
 }
 
 /**
+ *
+ * @return {string}
+ */
+function getPlayerName() {
+  var inputName = $("input#playerName").val();
+  if (!inputName || inputName.length === 0) {
+    inputName = player.player_name;
+  }
+  player.player_name = inputName;
+
+  return player.player_name;
+}
+
+/**
  * Send join game request to server
  *
  * @param playerName
  */
-function joinGame(playerName) {
-  var msg = {type: "create_player", data: {player_name: playerName}};
+function joinGame(playerName, public, gameId) {
+  var msg = {
+    type: "create_player",
+    data: {
+      player_name: playerName,
+      game_public: public
+    }
+  };
+
+  if (gameId) {
+    msg.data.game_id = gameId;
+  }
+
   conn.send(JSON.stringify(msg));
 }
 
@@ -96,12 +161,13 @@ function joinGame(playerName) {
  * Toggle labels signalizing if player is on turn or not
  */
 function toggleTurnLabel() {
+  $("#alerts .alert").hide();
   if (player.is_my_turn === true) {
-    $("div#turnToggle .my_turn").show();
-    $("div#turnToggle .opponents_turn").hide();
+    $("div#alerts .alert-success").show();
+    $("div#alerts .alert-warning").hide();
   } else {
-    $("div#turnToggle .my_turn").hide();
-    $("div#turnToggle .opponents_turn").show();
+    $("div#alerts .alert-success").hide();
+    $("div#alerts .alert-warning").show();
   }
 }
 
@@ -125,7 +191,11 @@ function drawGameBoard(boardSize) {
 
   $("div#gameBoard").html(board);
   $("div#gameBoard").show();
-  $("div#turnToggle").show();
+
+  var cells = $("div#gameBoard table tr td");
+  if (cells.width() > cells.height()) {
+    $(cells).height(cells.width());
+  }
 }
 
 /**
@@ -164,9 +234,6 @@ function startGameResp(data) {
 
   var boardSize = data.board_size;
 
-  $("div#gameEntry").html(
-    '<p><strong>' + player.player_name + '</strong>, your symbol is: <strong>' + player.symbol + '</strong></p>'
-  );
   toggleTurnLabel();
   drawGameBoard(boardSize);
 }
@@ -178,8 +245,20 @@ function startGameResp(data) {
 function createPlayerResp(data) {
   player = data;
 
-  $("div#gameEntry").html('<p>...waiting for opponent...</p>');
-  $("div#turnToggle .my_turn").prepend('<strong>' + player.player_name + '</strong>, ');
+  $("div#gameEntry").hide();
+
+  if (player.game_public) {
+    $("div#alerts .alert-info").html('Looking for an opponent...');
+  } else {
+    $("div#alerts .alert-info").html(
+      'Waiting for opponent to connect. Share this game token with him: <strong>'+ player.game_id + '</strong>'
+    );
+  }
+
+  $("div#alerts .alert-info").show();
+
+  $("div#alerts .alert-success").prepend('<strong>' + player.player_name + '</strong>, ');
+  $("div#alerts .alert-success").append(' Your symbol is <strong>' + getSymbolImgTag(player.symbol) + '</strong>.');
 }
 
 /**
@@ -192,12 +271,15 @@ function addMoveResp(data) {
   var y = data.coords.y;
   var key = 'td#field-' + x + separator + y;
 
-  $(key).html(data.symbol);
+  $('td.field').removeClass('last_turn');
+  $(key).addClass('last_turn');
+  $(key).html(getSymbolImgTag(data.symbol));
 
   if (player.player_id === data.player_on_turn) {
     player.is_my_turn = true;
   } else {
     player.is_my_turn = false;
+    $(key).addClass('my_turn');
   }
 
   toggleTurnLabel();
@@ -210,14 +292,18 @@ function addMoveResp(data) {
  */
 function endOfGameResp(data) {
   player.is_my_turn = false;
-  var label = '<div class="alert alert-danger h2">You loose, try again.</div>';
+  $("div#alerts .alert").hide();
   if (player.player_id === data.winner_id) {
-    label = '<div class="alert alert-success h2">Congratulations, you won.</div>';
+    $("div#alerts .alert-success")
+      .html('<strong>Congratulations, you won.</strong>')
+      .show();
+  } else {
+    $("div#alerts .alert-danger")
+      .html('<strong>You loose, try again. You can do it!</strong>')
+      .show();
   }
 
-  $("div#turnToggle").html(label);
-  $("div#gameBoard").fadeTo(200, 0.33);
-  conn.close();
+  deactivateGame();
 }
 
 /**
@@ -225,13 +311,35 @@ function endOfGameResp(data) {
  */
 function disconnectPlayerResp() {
   player.is_my_turn = false;
-  var label = '<div class="alert alert-warning h2">It seems your opponent has left the game :(</div>';
+  $("#alerts .alert").hide();
+  $("#alerts .alert-warning").html('<strong>Your opponent has left the game :(</strong>').show();
 
-  $("div#turnToggle").html(label);
-  $("div#gameBoard").fadeTo(200, 0.33);
-  conn.close();
+  deactivateGame();
 }
 
+/**
+ *
+ */
+function deactivateGame() {
+  $("div#gameBoard").fadeTo(200, 0.33);
+  $("div.buttons").show();
+  conn.close();
+  conn = null;
+}
+
+/**
+ *
+ * @param symbol
+ * @return {string}
+ */
+function getSymbolImgTag(symbol) {
+  symbolTag = '<img src="images/circle.png" alt="O"/>';
+  if (symbol === 'X') {
+    var symbolTag = '<img src="images/cross.png" alt="X"/>';
+  }
+
+  return symbolTag;
+}
 
 /**
  * Add message to message log
@@ -241,7 +349,39 @@ function disconnectPlayerResp() {
 function log(msg) {
   var d = new Date();
   var timeStr = d.getHours() + ":" + d.getMinutes() + ":" + d.getSeconds();
-  msg = timeStr + ' -> ' + msg;
+  msg = '<span class="log_date">' + timeStr + '</span>' + msg;
 
   $("div#gameLog").prepend("<p>" + msg + "</p>");
+  $("#gameLogWrapper").show();
+}
+
+/**
+ *
+ * @param sParam
+ * @return {boolean}
+ */
+function getUrlParameter(sParam) {
+  var sPageURL = decodeURIComponent(window.location.search.substring(1)),
+    sURLVariables = sPageURL.split('&'),
+    sParameterName,
+    i;
+
+  for (i = 0; i < sURLVariables.length; i++) {
+    sParameterName = sURLVariables[i].split('=');
+
+    if (sParameterName[0] === sParam) {
+      return sParameterName[1] === undefined ? true : sParameterName[1];
+    }
+  }
+}
+
+/**
+ *
+ */
+function preFillGameEntry() {
+  var name = getUrlParameter('player_name');
+  if (name) {
+    player.player_name = name;
+    $("input#playerName").val(name);
+  }
 }

@@ -27,6 +27,11 @@ class Game
 	private $id;
 
 	/**
+	 * @var boolean
+	 */
+	private $public = TRUE;
+
+	/**
 	 * @var Player[]
 	 */
 	private $players;
@@ -80,6 +85,22 @@ class Game
 	public function getId(): string
 	{
 		return $this->id;
+	}
+
+	/**
+	 * @return bool
+	 */
+	public function isPublic(): bool
+	{
+		return $this->public;
+	}
+
+	/**
+	 * @param bool $public
+	 */
+	public function setPublic(bool $public)
+	{
+		$this->public = $public;
 	}
 
 	/**

@@ -21,7 +21,7 @@ class CreatePlayerMessageHandler implements MessageHandlerInterface
 	public const CREATE_PLAYER_KEY      = 'create_player';
 	public const CREATE_PLAYER_KEY_RESP = 'create_player_resp';
 	public const START_GAME_RESP_KEY    = 'start_game_resp';
-	public const INFO_RESP_KEY			= 'info_resp';
+	public const INFO_RESP_KEY          = 'info_resp';
 
 	/**
 	 * @var GameLobby
@@ -51,6 +51,10 @@ class CreatePlayerMessageHandler implements MessageHandlerInterface
 		if (!isset($data['player_name'])) {
 			throw new LogicException('Missing player name');
 		}
+
+		if (!isset($data['game_public'])) {
+			throw new LogicException('Please specify if you want to join public game or not.');
+		}
 	}
 
 	/**
@@ -61,11 +65,19 @@ class CreatePlayerMessageHandler implements MessageHandlerInterface
 	 */
 	public function processMessage(ConnectionInterface $conn, array $data)
 	{
-		$player = $this->lobby->createPlayer($conn, $data['player_name'] ?? NULL);
-		$game   = $player->getGame();
+		$playerName = $data['player_name'] ?? NULL;
+		$gameId     = $data['game_id'] ?? NULL;
+		$gamePublic = TRUE;
+		if ($data['game_public'] === FALSE || strtolower($data['game_public']) === 'false') {
+			$gamePublic = FALSE;
+		}
+
+		$player = $this->lobby->createPlayer($conn, $playerName);
+		$game   = $this->getGame($gamePublic, $gameId);
+
+		$this->addPlayerToGame($player, $game);
 
 		$this->lobby->notifyPlayer($player, $this->createRespMessage($player));
-
 		$this->lobby->notifyAllPlayers($game, $this->createNewPlayerMessage($player));
 
 		if ($player->getGame()->isReady()) {
@@ -73,6 +85,43 @@ class CreatePlayerMessageHandler implements MessageHandlerInterface
 		}
 
 		return TRUE;
+	}
+
+	/**
+	 * @param bool        $isPublic
+	 * @param null|string $gameId
+	 *
+	 * @return Game
+	 */
+	private function getGame(bool $isPublic, ?string $gameId = NULL): Game
+	{
+		if (!$isPublic) {
+			if ($gameId) {
+				// Player is joining existing private game
+				$game = $this->lobby->findGame($gameId);
+				if ($game) {
+					return $game;
+				}
+			} else {
+				// Player is creating new private game
+				return $this->lobby->createPrivateGame();
+			}
+		}
+
+		// By default return public game
+		return $this->lobby->getRandomPublicGame();
+	}
+
+	/**
+	 * @param Player $player
+	 * @param Game   $game
+	 */
+	private function addPlayerToGame(Player $player, Game $game)
+	{
+		$game->addPlayer($player);
+		$player->setGame($game);
+
+		echo sprintf('Player "%s" has joined game "%s"', $player->getId(), $player->getGame()->getId());
 	}
 
 	/**
@@ -88,6 +137,7 @@ class CreatePlayerMessageHandler implements MessageHandlerInterface
 			'data'    => [
 				'player_id'   => $player->getId(),
 				'game_id'     => $player->getGame()->getId(),
+				'game_public' => $player->getGame()->isPublic(),
 				'player_name' => $player->getName(),
 				'symbol'      => $player->getSymbol(),
 				'is_my_turn'  => FALSE,
@@ -109,7 +159,7 @@ class CreatePlayerMessageHandler implements MessageHandlerInterface
 			'message' => sprintf('Game begins. It\'s "%s"\'s turn', $game->getPlayerOnTurn()->getName()),
 			'data'    => [
 				'player_on_turn' => $game->getPlayerOnTurn()->getId(),
-				'board_size' => $game->getBoardSize(),
+				'board_size'     => $game->getBoardSize(),
 			],
 		];
 

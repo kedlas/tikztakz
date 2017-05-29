@@ -59,6 +59,10 @@ body {
     margin-top: 1.5rem;
 }
 
+.toggle {
+    cursor:pointer;
+}
+
 /* Responsive: Portrait tablets and up */
 @media screen and (min-width: 48em) {
     /* Remove the padding we set earlier */
@@ -79,21 +83,46 @@ body {
 }
 
 #gameBoard.jumbotron {
-    padding: 15px;
+    padding: 5px;
+    background: #fbfbfb;
+}
+
+#gameBoard table {
+    width: 100%;
+    background: #fefff8;
 }
 
 #gameBoard table tr td {
-    width: 30px;
-    height: 30px;
-    line-height: 30px;
+    width: 25px;
+    height: 25px;
+    line-height: 25px;
     font-weight: bolder;
-    font-size: 15px;
-    border: 1px dashed #999;
+    font-size: 14px;
+    border: 1px solid #ddd;
     text-align: center;
     cursor: pointer;
+    color: #f64c1f;
+}
+
+#gameBoard table tr td.my_turn {
+    color: #3089f6;
+}
+
+#gameBoard table tr td.last_turn {
+    background: #e7f9df;
 }
 
 #gameLog {
     height: 150px;
-    overflow: hidden;
+    overflow: auto;
+    font-size: 12px;
+    line-height: 14px;
+}
+
+#gameLog .log_date {
+    color: #666;
+    font-size: 80%;
+    width: 60px;
+    line-height: 14px;
+    display: inline-block;
 }
