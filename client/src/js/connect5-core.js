@@ -1,82 +1,17 @@
-//var serverAddr = 'ws://165.227.143.213:8080';
+// var serverAddr = 'ws://165.227.143.213:8080';
 var serverAddr = 'ws://10.211.55.6:8888';
 var conn = null;
 var separator = '-';
+var defaultName = 'Unknown player';
 var player = {
   symbol: '',
   color: '',
   player_id: '',
   game_id: '',
   game_public: true,
-  player_name: 'Unknown player',
+  player_name: defaultName,
   is_my_turn: false
 };
-
-$(document).ready(function () {
-  onDeviceReady();
-});
-
-window.onbeforeunload = function (e) {
-  if (conn) {
-      return 'Are you sure to leave the game?';
-  }
-};
-
-/**
- * Device ready, bind basic behavior
- */
-function onDeviceReady() {
-  initWebSockets();
-  preFillGameEntry();
-
-  $("#joinRandomPublicGame").click(function () {
-    if (!conn) {
-      return null;
-    }
-
-    joinGame(getPlayerName(), true);
-  });
-  
-  $("#createPrivateGame").click(function () {
-    if (!conn) {
-      return null;
-    }
-
-    joinGame(getPlayerName(), false);
-  });
-
-  $("#joinPrivateGame").click(function () {
-    if (!conn) {
-      return null;
-    }
-
-    var gameId = $("#privateGameId").val();
-
-    if (!gameId || gameId.length === 0) {
-      return null;
-    }
-
-    joinGame(getPlayerName(), false, gameId);
-  });
-
-  $("#gameBoard").on('click', 'td.field', function (event) {
-    if (!conn) {
-      return null;
-    }
-    if (!player.is_my_turn) {
-      return null;
-    }
-    addMove(event.target.id);
-  });
-
-  $('.buttons #resetGame').click(function () {
-    if (conn) {
-      conn.close();
-    }
-    conn = null;
-    location.reload();
-  });
-}
 
 /**
  * Create websocket connection to server
@@ -88,9 +23,14 @@ function initWebSockets() {
     log("Connection established!");
   };
 
+  conn.onclose = function () {
+    log("Connection closed.");
+  };
+
   conn.onerror = function (e) {
     conn = null;
     log("Connection to server failed!" + e);
+    // todo - check if works in app version
     location.reload();
   };
 
@@ -99,7 +39,8 @@ function initWebSockets() {
     try {
       msg = JSON.parse(e.data);
     } catch (err) {
-      console.log(err, e);
+      log(err);
+      log(e);
     }
 
     if (msg.message) {
@@ -107,7 +48,7 @@ function initWebSockets() {
     }
 
     if (msg.type === 'info_resp') {
-      // do nothing, already logged above
+      // do nothing, message already logged by code above
     } else if (msg.type === 'create_player_resp') {
       createPlayerResp(msg.data);
     } else if (msg.type === 'start_game_resp') {
@@ -122,16 +63,22 @@ function initWebSockets() {
   };
 }
 
+function closeWebSockets() {
+  conn.close();
+  conn = null;
+}
+
 /**
  *
  * @return {string}
  */
 function getPlayerName() {
   var inputName = $("input#playerName").val();
-  if (!inputName || inputName.length === 0) {
-    inputName = player.player_name;
+  if (inputName.length > 0) {
+    player.player_name = $("input#playerName").val();
+  } else {
+    player.player_name = defaultName;
   }
-  player.player_name = inputName;
 
   return player.player_name;
 }
@@ -140,13 +87,15 @@ function getPlayerName() {
  * Send join game request to server
  *
  * @param playerName
+ * @param isPublic
+ * @param gameId
  */
-function joinGame(playerName, public, gameId) {
+function joinGame(playerName, isPublic, gameId) {
   var msg = {
     type: "create_player",
     data: {
       player_name: playerName,
-      game_public: public
+      game_public: isPublic
     }
   };
 
@@ -155,20 +104,6 @@ function joinGame(playerName, public, gameId) {
   }
 
   conn.send(JSON.stringify(msg));
-}
-
-/**
- * Toggle labels signalizing if player is on turn or not
- */
-function toggleTurnLabel() {
-  $("#alerts .alert").hide();
-  if (player.is_my_turn === true) {
-    $("div#alerts .alert-success").show();
-    $("div#alerts .alert-warning").hide();
-  } else {
-    $("div#alerts .alert-success").hide();
-    $("div#alerts .alert-warning").show();
-  }
 }
 
 /**
@@ -230,12 +165,14 @@ function addMove(fieldId) {
 function startGameResp(data) {
   if (player.player_id === data.player_on_turn) {
     player.is_my_turn = true;
+  } else {
+    player.is_my_turn = false;
   }
 
-  var boardSize = data.board_size;
-
-  toggleTurnLabel();
-  drawGameBoard(boardSize);
+  gameStartedAlert();
+  toggleTurnAlert(player.is_my_turn);
+  // must be after it is shown because ov correct cell width calculations
+  drawGameBoard(data.board_size);
 }
 
 /**
@@ -243,24 +180,9 @@ function startGameResp(data) {
  * @param data
  */
 function createPlayerResp(data) {
+  // set player props to new values
   player = data;
-
-  $("div#gameEntry").hide();
-
-  if (player.game_public) {
-    $("div#alerts .alert-info").html('Looking for an opponent...');
-  } else {
-    var link = window.location.href.split('#')[0] + '?game_id=' + player.game_id;
-    $("div#alerts .alert-info").html(
-      'Copy the link below and send it to your friend.When he connects the game will start automatically.' +
-      '<p><strong>'+ link + '</strong></p>'
-    );
-  }
-
-  $("div#alerts .alert-info").show();
-
-  $("div#alerts .alert-success").prepend('<strong>' + player.player_name + '</strong>, ');
-  $("div#alerts .alert-success").append(' Your symbol is <strong>' + getSymbolImgTag(player.symbol) + '</strong>.');
+  waitingForOpponentAlert(player.game_public);
 }
 
 /**
@@ -281,10 +203,11 @@ function addMoveResp(data) {
     player.is_my_turn = true;
   } else {
     player.is_my_turn = false;
-    $(key).addClass('my_turn');
+    // todo - delete
+    // $(key).addClass('my_turn');
   }
 
-  toggleTurnLabel();
+  toggleTurnAlert(player.is_my_turn);
 }
 
 /**
@@ -293,40 +216,24 @@ function addMoveResp(data) {
  * @param data
  */
 function endOfGameResp(data) {
+  closeWebSockets();
   player.is_my_turn = false;
-  $("div#alerts .alert").hide();
+  deactivateGameBoard();
   if (player.player_id === data.winner_id) {
-    $("div#alerts .alert-success")
-      .html('<strong>Congratulations, you won.</strong>')
-      .show();
+    wonAlert();
   } else {
-    $("div#alerts .alert-danger")
-      .html('<strong>You loose, try again. You can do it!</strong>')
-      .show();
+    looseAlert();
   }
-
-  deactivateGame();
 }
 
 /**
  *
  */
 function disconnectPlayerResp() {
+  closeWebSockets();
   player.is_my_turn = false;
-  $("#alerts .alert").hide();
-  $("#alerts .alert-warning").html('<strong>Your opponent has left the game :(</strong>').show();
-
-  deactivateGame();
-}
-
-/**
- *
- */
-function deactivateGame() {
-  $("div#gameBoard").fadeTo(200, 0.33);
-  $("div.buttons").show();
-  conn.close();
-  conn = null;
+  deactivateGameBoard();
+  opponentLeftAlert();
 }
 
 /**
@@ -341,20 +248,6 @@ function getSymbolImgTag(symbol) {
   }
 
   return symbolTag;
-}
-
-/**
- * Add message to message log
- *
- * @param msg
- */
-function log(msg) {
-  var d = new Date();
-  var timeStr = d.getHours() + ":" + d.getMinutes() + ":" + d.getSeconds();
-  msg = '<span class="log_date">' + timeStr + '</span>' + msg;
-
-  $("div#gameLog").prepend("<p>" + msg + "</p>");
-  $("#gameLogWrapper").show();
 }
 
 /**
