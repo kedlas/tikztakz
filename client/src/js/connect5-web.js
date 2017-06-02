@@ -67,33 +67,38 @@ function log(msg) {
   $("#gameLogWrapper").show();
 }
 
-function waitingForOpponentAlert(isGamePublic) {
+function waitingForOpponentAlert() {
   $("div#gameEntry").hide();
-  if (isGamePublic) {
-    $("div#alerts .alert-info").html('Looking for an opponent...');
+  if (game.is_public) {
+    $("div#alerts .alert-info")
+      .html('Looking for an opponent...')
+      .show();
   } else {
-    var link = window.location.href.split('#')[0] + '?game_id=' + player.game_id;
-    $("div#alerts .alert-info").html(
-      'Copy the link below and send it to your friend.When he connects the game will start automatically.' +
-      '<p><strong>'+ link + '</strong></p>'
-    );
+    var link = window.location.href.split('#')[0];
+    link = link.split('#')[0] + '?game_id=' + game.id;
+
+    $("div#alerts .alert-info")
+      .html(
+        'Copy the link below and send it to your friend. When he connects the game will start automatically.' +
+        '<p><strong>'+ link + '</strong></p>'
+      )
+      .show();
   }
 }
 
 function gameStartedAlert() {
   $("div#alerts .alert-info").show();
-  $("div#alerts .alert-success").prepend('<strong>' + player.player_name + '</strong>, ');
-  $("div#alerts .alert-success").append(' Your symbol is <strong>' + getSymbolImgTag(player.symbol) + '</strong>.');
 }
 
-function toggleTurnAlert(myTurn) {
-  if (myTurn) {
-    $("#alerts .alert").hide();
+function toggleTurnAlert() {
+  $("#alerts .alert").hide();
+
+  if (player.is_my_turn) {
+    $("div#alerts .alert-success").html('<strong>' + player.name + '</strong>, It\'s your turn.');
+    $("div#alerts .alert-success").append(' Your symbol is <strong>' + getSymbolImgTag(player.symbol) + '</strong>.');
     $("div#alerts .alert-success").show();
-    $("div#alerts .alert-warning").hide();
   } else {
-    $("#alerts .alert").hide();
-    $("div#alerts .alert-success").hide();
+    $("div#alerts .alert-warning").html('It\'s ' + player.opponent_name  +'\'s turn.');
     $("div#alerts .alert-warning").show();
   }
 }
@@ -120,4 +125,12 @@ function looseAlert() {
   $("div#alerts .alert-danger")
     .html('<strong>You loose, try again. You can do it!</strong>')
     .show();
+}
+
+function errorAlert(message) {
+  alert(message);
+  // $("div#alerts .alert").hide();
+  // $("div#alerts .alert-danger")
+  //   .html(message)
+  //   .show();
 }

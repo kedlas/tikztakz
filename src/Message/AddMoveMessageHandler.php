@@ -100,7 +100,11 @@ class AddMoveMessageHandler implements MessageHandlerInterface
 	{
 		$msg = [
 			'type'    => self::ADD_MOVE_KEY_RESP,
-			'message' => sprintf('Player %s added move to field %s', $player->getName(), $x . ':' . $y),
+			'message' => sprintf(
+				'Player %s put "%s" to coordinates %s',
+				$player->getName(),
+				$player->getSymbol(),
+				'x' . $x . ' : y' . $y),
 			'data'    => [
 				'coords' => [
 					'x' => $x,

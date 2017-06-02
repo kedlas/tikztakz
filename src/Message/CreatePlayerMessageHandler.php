@@ -48,8 +48,8 @@ class CreatePlayerMessageHandler implements MessageHandlerInterface
 			throw new LogicException('Only one player per connection is allowed.');
 		}
 
-		if (!isset($data['player_name'])) {
-			throw new LogicException('Missing player name');
+		if (!isset($data['player_name']) || !strlen($data['player_name'])) {
+			throw new LogicException('Missing player name. Please fill your name.');
 		}
 
 		if (!isset($data['game_public'])) {
@@ -95,21 +95,23 @@ class CreatePlayerMessageHandler implements MessageHandlerInterface
 	 */
 	private function getGame(bool $isPublic, ?string $gameId = NULL): Game
 	{
-		if (!$isPublic) {
-			if ($gameId) {
-				// Player is joining existing private game
-				$game = $this->lobby->findGame($gameId);
-				if ($game) {
-					return $game;
-				}
-			} else {
-				// Player is creating new private game
-				return $this->lobby->createPrivateGame();
-			}
+		if ($isPublic) {
+			// Join random game
+			return $this->lobby->getRandomPublicGame();
 		}
 
-		// By default return public game
-		return $this->lobby->getRandomPublicGame();
+		if (!$gameId) {
+			// Create private game
+			return $this->lobby->createPrivateGame();
+		}
+
+		// Player is joining existing private game
+		$game = $this->lobby->findGame($gameId);
+		if ($game) {
+			return $game;
+		}
+
+		throw new LogicException('Trying to join non-existing game: '. $gameId);
 	}
 
 	/**
@@ -140,6 +142,7 @@ class CreatePlayerMessageHandler implements MessageHandlerInterface
 				'game_public' => $player->getGame()->isPublic(),
 				'player_name' => $player->getName(),
 				'symbol'      => $player->getSymbol(),
+				'opponents'   => $player->getOpponents(),
 				'is_my_turn'  => FALSE,
 			],
 		];

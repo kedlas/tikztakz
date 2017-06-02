@@ -1,16 +1,18 @@
-// var serverAddr = 'ws://165.227.143.213:8080';
-var serverAddr = 'ws://10.211.55.6:8888';
+var serverAddr = 'ws://165.227.143.213:8080';
+// var serverAddr = 'ws://10.211.55.6:8080';
 var conn = null;
 var separator = '-';
 var defaultName = 'Unknown player';
 var player = {
+  id: '',
+  name: defaultName,
   symbol: '',
-  color: '',
-  player_id: '',
-  game_id: '',
-  game_public: true,
-  player_name: defaultName,
-  is_my_turn: false
+  is_my_turn: false,
+  opponent_name: 'opponent'
+};
+var game = {
+  id: '',
+  is_public: true
 };
 
 /**
@@ -25,13 +27,15 @@ function initWebSockets() {
 
   conn.onclose = function () {
     log("Connection closed.");
+    errorAlert('Connection to server closed.');
   };
 
   conn.onerror = function (e) {
     conn = null;
-    log("Connection to server failed!" + e);
+    errorAlert('Connection to server failed.');
+    log("Connection to server failed." + e);
     // todo - check if works in app version
-    location.reload();
+    // location.reload();
   };
 
   conn.onmessage = function (e) {
@@ -49,6 +53,8 @@ function initWebSockets() {
 
     if (msg.type === 'info_resp') {
       // do nothing, message already logged by code above
+    } if (msg.type === 'error') {
+      errorAlert(msg.data.message);
     } else if (msg.type === 'create_player_resp') {
       createPlayerResp(msg.data);
     } else if (msg.type === 'start_game_resp') {
@@ -69,33 +75,34 @@ function closeWebSockets() {
 }
 
 /**
+ * Returns name filled by player or default one
  *
  * @return {string}
  */
 function getPlayerName() {
   var inputName = $("input#playerName").val();
   if (inputName.length > 0) {
-    player.player_name = $("input#playerName").val();
+    player.name = $("input#playerName").val();
   } else {
-    player.player_name = defaultName;
+    player.name = '';
   }
 
-  return player.player_name;
+  return player.name;
 }
 
 /**
  * Send join game request to server
  *
  * @param playerName
- * @param isPublic
+ * @param isGamePublic
  * @param gameId
  */
-function joinGame(playerName, isPublic, gameId) {
+function joinGame(playerName, isGamePublic, gameId) {
   var msg = {
     type: "create_player",
     data: {
       player_name: playerName,
-      game_public: isPublic
+      game_public: isGamePublic
     }
   };
 
@@ -130,6 +137,12 @@ function drawGameBoard(boardSize) {
   var cells = $("div#gameBoard table tr td");
   if (cells.width() > cells.height()) {
     $(cells).height(cells.width());
+    $(cells).css('line-height', cells.height() + 'px');
+  }
+
+  if (cells.width() < cells.height()) {
+    $(cells).height(cells.width());
+    $(cells).css('line-height', cells.height() + 'px');
   }
 }
 
@@ -163,7 +176,7 @@ function addMove(fieldId) {
  * @param data
  */
 function startGameResp(data) {
-  if (player.player_id === data.player_on_turn) {
+  if (player.id === data.player_on_turn) {
     player.is_my_turn = true;
   } else {
     player.is_my_turn = false;
@@ -180,9 +193,16 @@ function startGameResp(data) {
  * @param data
  */
 function createPlayerResp(data) {
-  // set player props to new values
-  player = data;
-  waitingForOpponentAlert(player.game_public);
+  game.id = data.game_id;
+  game.is_public = data.game_public;
+
+  player.id = data.player_id;
+  player.name = data.player_name;
+  player.symbol = data.symbol;
+  player.is_my_turn = data.is_my_turn;
+  player.opponent_name = data.opponents[0] ? data.opponents[0] : 'opponent';
+
+  waitingForOpponentAlert();
 }
 
 /**
@@ -199,15 +219,13 @@ function addMoveResp(data) {
   $(key).addClass('last_turn');
   $(key).html(getSymbolImgTag(data.symbol));
 
-  if (player.player_id === data.player_on_turn) {
+  if (player.id === data.player_on_turn) {
     player.is_my_turn = true;
   } else {
     player.is_my_turn = false;
-    // todo - delete
-    // $(key).addClass('my_turn');
   }
 
-  toggleTurnAlert(player.is_my_turn);
+  toggleTurnAlert();
 }
 
 /**
@@ -219,7 +237,7 @@ function endOfGameResp(data) {
   closeWebSockets();
   player.is_my_turn = false;
   deactivateGameBoard();
-  if (player.player_id === data.winner_id) {
+  if (player.id === data.winner_id) {
     wonAlert();
   } else {
     looseAlert();
@@ -242,9 +260,9 @@ function disconnectPlayerResp() {
  * @return {string}
  */
 function getSymbolImgTag(symbol) {
-  symbolTag = '<img src="images/circle.png" alt="O"/>';
+  symbolTag = '<img src="images/circle.png" alt="O" class="symbol symbol_circle"/>';
   if (symbol === 'X') {
-    var symbolTag = '<img src="images/cross.png" alt="X"/>';
+    var symbolTag = '<img src="images/cross.png" alt="X" class="symbol symbol_cross"/>';
   }
 
   return symbolTag;

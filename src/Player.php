@@ -124,4 +124,25 @@ class Player
 		$this->symbol = $symbol;
 	}
 
+	/**
+	 * @return array
+	 */
+	public function getOpponents(): array
+	{
+		if (!$this->game) {
+			return [];
+		}
+
+		$opponents = [];
+		foreach ($this->game->getPlayers() as $player) {
+			if ($player->getId() === $this->getId()) {
+				continue;
+			}
+
+			$opponents[] = $player->getName();
+		}
+
+		return $opponents;
+	}
+
 }

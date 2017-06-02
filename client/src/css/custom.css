@@ -88,8 +88,8 @@ body {
 }
 
 #gameBoard table {
-    width: 100%;
     background: #fefff8;
+    margin: auto;
 }
 
 #gameBoard table tr td {
@@ -102,6 +102,16 @@ body {
     text-align: center;
     cursor: pointer;
     color: #f64c1f;
+}
+
+#gameBoard table tr td img {
+    height: 90%;
+    width: 90%;
+}
+
+#gameBoard table tr td img.symbol_circle {
+    height: 80%;
+    width: 80%;
 }
 
 #gameBoard table tr td.my_turn {
