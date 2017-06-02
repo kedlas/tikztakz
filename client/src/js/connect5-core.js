@@ -1,5 +1,5 @@
-var serverAddr = 'ws://165.227.143.213:8080';
-// var serverAddr = 'ws://10.211.55.6:8080';
+// var serverAddr = 'ws://165.227.143.213:8080';
+var serverAddr = 'ws://10.211.55.6:8080';
 var conn = null;
 var separator = '-';
 var defaultName = 'Unknown player';
@@ -27,7 +27,6 @@ function initWebSockets() {
 
   conn.onclose = function () {
     log("Connection closed.");
-    errorAlert('Connection to server closed.');
   };
 
   conn.onerror = function (e) {
@@ -69,6 +68,9 @@ function initWebSockets() {
   };
 }
 
+/**
+ * Close current websockets connection
+ */
 function closeWebSockets() {
   conn.close();
   conn = null;
@@ -80,10 +82,13 @@ function closeWebSockets() {
  * @return {string}
  */
 function getPlayerName() {
-  var inputName = $("input#playerName").val();
-  if (inputName.length > 0) {
+  var input = $("input#playerName");
+  if (input.val().length > 0) {
+    input.parent().removeClass('has-error');
     player.name = $("input#playerName").val();
+    sessionStorage.setItem('player_name', player.name);
   } else {
+    input.parent().addClass('has-error');
     player.name = '';
   }
 
@@ -133,7 +138,10 @@ function drawGameBoard(boardSize) {
 
   $("div#gameBoard").html(board);
   $("div#gameBoard").show();
+  autoResizeGameBoard();
+}
 
+function autoResizeGameBoard() {
   var cells = $("div#gameBoard table tr td");
   if (cells.width() > cells.height()) {
     $(cells).height(cells.width());
@@ -292,7 +300,7 @@ function getUrlParameter(sParam) {
  *
  */
 function preFillGameEntry() {
-  var name = getUrlParameter('player_name');
+  var name = sessionStorage.getItem('player_name');
   if (name) {
     player.player_name = name;
     $("input#playerName").val(name);
@@ -301,5 +309,9 @@ function preFillGameEntry() {
   var gameId = getUrlParameter('game_id');
   if (gameId) {
     $("#privateGameId").val(gameId);
+    $("#privateGameId").parent().addClass('has-success readonly');
+    $("#privateGameId").attr('readonly', true);
+  } else {
+    $("#privateGameId").attr('readonly', false);
   }
 }

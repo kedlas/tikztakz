@@ -22,11 +22,22 @@
 <body>
 
 <div class="container">
+
+    <div id="alerts">
+        <div class="alert alert-info collapse"></div>
+        <div class="alert alert-success collapse">.</div>
+        <div class="alert alert-warning collapse"></div>
+        <div class="alert alert-danger collapse"></div>
+    </div>
+
     <div id="gameEntry" class="jumbotron">
         <h1 class="display-3">Connect5</h1>
         <div>
             <p class="lead">Please fill in your name to enter the game.</p>
-            <p><input type="text" name="playerName" id="playerName" placeholder="Enter your name"/></p>
+            <p>
+                <input type="text" name="playerName" id="playerName" class="form-control"
+                       placeholder="Enter your name"/>
+            </p>
             <hr/>
             <p>
                 <a class="btn btn-lg btn-success" href="#" role="button" id="joinRandomPublicGame">
@@ -40,7 +51,8 @@
                 </a>
             </p>
             <p>or</p>
-            <p><input type="text" name="privateGameId" id="privateGameId" placeholder="Enter game token"/></p>
+            <p><input type="text" name="privateGameId" id="privateGameId" class="form-control"
+                      placeholder="Enter game token"/></p>
             <p>
                 <a class="btn btn-lg btn-success" href="#" role="button" id="joinPrivateGame">
                     Join private game
@@ -51,13 +63,6 @@
 
     <div class="jumbotron buttons collapse">
         <button id="resetGame" class="btn btn-success">Play again!</button>
-    </div>
-
-    <div id="alerts">
-        <div class="alert alert-info collapse">Looking for an opponent...</div>
-        <div class="alert alert-success collapse">It's your turn.</div>
-        <div class="alert alert-warning collapse">It's opponents turn.</div>
-        <div class="alert alert-danger collapse">Oops, something went terribly wrong :(</div>
     </div>
 
     <div class="jumbotron collapse" id="gameBoard">

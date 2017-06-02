@@ -55,9 +55,12 @@ class DisconnectPlayerMessageHandler implements MessageHandlerInterface
 	public function processMessage(ConnectionInterface $conn, array $data)
 	{
 		$player = $this->lobby->findPlayer($conn);
-		$this->lobby->notifyAllPlayers($player->getGame(), $this->createPlayerDisconnectedMessage($player));
+		$game = $player->getGame();
 
-		$this->lobby->deleteGame($player->getGame());
+		if ($game) {
+			$this->lobby->notifyAllPlayers($player->getGame(), $this->createPlayerDisconnectedMessage($player));
+			$this->lobby->deleteGame($player->getGame());
+		}
 
 		return TRUE;
 	}

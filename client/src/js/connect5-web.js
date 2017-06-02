@@ -5,6 +5,10 @@ window.onbeforeunload = function () {
   }
 };
 
+window.onresize = function() {
+  autoResizeGameBoard();
+};
+
 $(document).ready(function () {
   initWebSockets();
   preFillGameEntry();
@@ -69,6 +73,7 @@ function log(msg) {
 
 function waitingForOpponentAlert() {
   $("div#gameEntry").hide();
+  $("div#alerts .alert").hide();
   if (game.is_public) {
     $("div#alerts .alert-info")
       .html('Looking for an opponent...')
@@ -80,9 +85,10 @@ function waitingForOpponentAlert() {
     $("div#alerts .alert-info")
       .html(
         'Copy the link below and send it to your friend. When he connects the game will start automatically.' +
-        '<p><strong>'+ link + '</strong></p>'
+        '<hr/><p><a href="'+link+'" target="_blank"><strong>'+ link + '</strong></a></p>'
       )
       .show();
+
   }
 }
 
@@ -129,8 +135,6 @@ function looseAlert() {
 
 function errorAlert(message) {
   alert(message);
-  // $("div#alerts .alert").hide();
-  // $("div#alerts .alert-danger")
-  //   .html(message)
-  //   .show();
+  $("div#alerts .alert").hide();
+  $("div#alerts .alert-danger").html(message).show();
 }

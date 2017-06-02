@@ -82,6 +82,11 @@ body {
     }
 }
 
+#gameEntry input#playerName, #gameEntry input#privateGameId {
+    max-width: 130px;
+    margin:auto;
+}
+
 #gameBoard.jumbotron {
     padding: 5px;
     background: #fbfbfb;
