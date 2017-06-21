@@ -64,7 +64,7 @@ class MessageRouter
 				$handler = $this->disconnectHandler;
 				break;
 			default:
-				throw new LogicException(sprintf('Invalid message type: "%s"', $type));
+				throw new LogicException(sprintf('Invalid message type: "%s"', $type), LogicException::INVALID_MESSAGE);
 		}
 
 		$handler->validate($conn, $data);

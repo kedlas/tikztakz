@@ -12,4 +12,6 @@ namespace Connect5\Exception;
 class LogicException extends \LogicException
 {
 
+	public const INVALID_MESSAGE = 0;
+
 }

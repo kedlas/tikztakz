@@ -248,7 +248,7 @@ class Game
 	 *
 	 * @return bool
 	 */
-	private function hasWon(Player $player, int $x, int $y): bool
+	public function hasWon(Player $player, int $x, int $y): bool
 	{
 		if ($this->hasHorizontalStreak($player, $x, $y) ||
 			$this->hasVerticalStreak($player, $x, $y) ||

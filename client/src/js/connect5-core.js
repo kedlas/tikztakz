@@ -1,5 +1,5 @@
-// var serverAddr = 'ws://165.227.143.213:8080';
-var serverAddr = 'ws://10.211.55.6:8080';
+var serverAddr = 'ws://165.227.143.213:8080';
+// var serverAddr = 'ws://10.211.55.6:8080';
 var conn = null;
 var separator = '-';
 var defaultName = 'Unknown player';
